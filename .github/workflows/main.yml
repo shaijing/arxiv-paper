@@ -1,0 +1,37 @@
+name: 'GitHub Actions Arxiv Paper Bot'
+on:
+  schedule:
+      - cron: '30 16 * * *' # 00:30 Beijing time every day
+permissions:
+  contents: write
+jobs:
+  update_daily_papers:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      
+    - name: "Set up Python"
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: "pyproject.toml"
+
+    - name: Install the project
+      run: uv sync
+
+    - name: Update papers
+      run:  uv run main.py
+
+    - name: Commit and push changes
+      uses: github-actions-x/commit@v2.9
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        push-branch: 'main'
+        commit-message: '✏️ Update papers automatically.'
+        force-add: 'true'
+        files: README.md
+        name: shaijing
+        email: yulingsc@outlook.com
