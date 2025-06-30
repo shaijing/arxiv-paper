@@ -1,10 +1,13 @@
 name: 'GitHub Actions Arxiv Paper Bot'
 on:
+  push:  # 为了调试方便，修改代码之后push上去即可以看到效果
+    paths: # 指定只有哪些文件修改了才会触发该工作流程
+      - .github/workflows/main.yml
   label:
     types:
       - created # for test
   schedule:
-      - cron: '00 12 * * *' # 00:30 Beijing time every day
+      - cron: '00 16 * * *' # 00:30 Beijing time every day
 permissions:
   contents: write
 jobs:
