@@ -1,13 +1,15 @@
 name: 'GitHub Actions Arxiv Paper Bot'
 on:
-  push:  # 为了调试方便，修改代码之后push上去即可以看到效果
-    paths: # 指定只有哪些文件修改了才会触发该工作流程
+  push:
+    branches:
+      - main
+    paths:
       - .github/workflows/main.yml
-  label:
-    types:
-      - created # for test
+      - main.py
+      - pyproject.toml
   schedule:
-      - cron: '00 16 * * *' # 00:30 Beijing time every day
+    - cron: '0 16 * * *' # 00:00 UTC = 08:00 Beijing time
+  workflow_dispatch: # 手动触发
 permissions:
   contents: write
 jobs:
@@ -15,15 +17,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: Install uv
       uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
       
     - name: "Set up Python"
       uses: actions/setup-python@v5
       with:
-        python-version-file: "pyproject.toml"
+        python-version-file: ".python-version"
 
     - name: Install the project
       run: uv sync
