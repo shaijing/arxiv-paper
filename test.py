@@ -49,4 +49,3 @@ for entry in root.findall("atom:entry", ns):
     print(f"PDF Link: {pdf_link}")
     print(f"Summary: {summary}")
     print("-" * 80)
-    break
