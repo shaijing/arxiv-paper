@@ -38,7 +38,7 @@ jobs:
     - name: Commit and push changes
       uses: github-actions-x/commit@v2.9
       with:
-        github-token: ${{ secrets.TOKEN }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         push-branch: 'main'
         commit-message: '✏️ Update papers automatically.'
         force-add: 'true'
