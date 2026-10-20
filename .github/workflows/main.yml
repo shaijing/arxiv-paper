@@ -5,8 +5,10 @@ on:
       - main
     paths:
       - .github/workflows/main.yml
+      - .python-version
       - main.py
       - pyproject.toml
+      - uv.lock
   schedule:
     - cron: '0 16 * * *' # 00:00 UTC = 08:00 Beijing time
   workflow_dispatch: # 手动触发

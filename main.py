@@ -1,11 +1,12 @@
 import datetime
 import sys
 import time
-from typing import Dict, List
 import urllib
-import feedparser
-from easydict import EasyDict
 from zoneinfo import ZoneInfo
+
+import feedparser
+
+from easydict import EasyDict
 
 
 def remove_duplicated_spaces(text: str) -> str:
@@ -70,8 +71,10 @@ def request_paper_with_arXiv_api(keyword: str, max_results: int = 30, op: str = 
 
 
 def filter_tags(
-    papers: List[Dict[str, str]], target_fileds: List[str] = ["cs", "stat"]
-) -> List[Dict[str, str]]:
+    papers: list[dict[str, str]], target_fileds: list[str] | None = None
+) -> list[dict[str, str]]:
+    if target_fileds is None:
+        target_fileds = ["cs", "stat"]
     # filtering tags: only keep the papers in target_fileds
     results = []
     for paper in papers:
@@ -84,8 +87,8 @@ def filter_tags(
 
 
 def get_daily_papers_by_keyword(
-    keyword: str, column_names: List[str], max_result: int, link: str = "OR"
-) -> List[Dict[str, str]]:
+    keyword: str, column_names: list[str], max_result: int, link: str = "OR"
+) -> list[dict[str, str]]:
     # get papers
     papers = request_paper_with_arXiv_api(
         keyword, max_result, link
@@ -103,11 +106,11 @@ def get_daily_papers_by_keyword(
 
 def get_daily_papers_by_keyword_with_retries(
     keyword: str,
-    column_names: List[str],
+    column_names: list[str],
     max_result: int,
     link: str = "OR",
     retries: int = 6,
-) -> List[Dict[str, str]]:
+) -> list[dict[str, str]]:
     for _ in range(retries):
         papers = get_daily_papers_by_keyword(keyword, column_names, max_result, link)
         if len(papers) > 0:
@@ -119,16 +122,18 @@ def get_daily_papers_by_keyword_with_retries(
     return None
 
 
-def generate_table(papers: List[Dict[str, str]], ignore_keys: List[str] = []) -> str:
+def generate_table(
+    papers: list[dict[str, str]], ignore_keys: list[str] | None = None
+) -> str:
+    if ignore_keys is None:
+        ignore_keys = []
     formatted_papers = []
     keys = papers[0].keys()
     for paper in papers:
         # process fixed columns
         formatted_paper = EasyDict()
         ## Title and Link
-        formatted_paper.Title = (
-            "**" + "[{0}]({1})".format(paper["Title"], paper["Link"]) + "**"
-        )
+        formatted_paper.Title = f"**[{paper['Title']}]({paper['Link']})**"
         ## Process Date (format: 2021-08-01T00:00:00Z -> 2021-08-01)
         formatted_paper.Date = paper["Date"].split("T")[0]
 
@@ -139,9 +144,7 @@ def generate_table(papers: List[Dict[str, str]], ignore_keys: List[str] = []) ->
             elif key == "Abstract":
                 # add show/hide button for abstract
                 formatted_paper[key] = (
-                    "<details><summary>Show</summary><p>{0}</p></details>".format(
-                        paper[key]
-                    )
+                    f"<details><summary>Show</summary><p>{paper[key]}</p></details>"
                 )
             elif key == "Authors":
                 # NOTE only use the first author
@@ -150,9 +153,7 @@ def generate_table(papers: List[Dict[str, str]], ignore_keys: List[str] = []) ->
                 tags = ", ".join(paper[key])
                 if len(tags) > 10:
                     formatted_paper[key] = (
-                        "<details><summary>{0}...</summary><p>{1}</p></details>".format(
-                            tags[:5], tags
-                        )
+                        f"<details><summary>{tags[:5]}...</summary><p>{tags}</p></details>"
                     )
                 else:
                     formatted_paper[key] = tags
@@ -161,9 +162,7 @@ def generate_table(papers: List[Dict[str, str]], ignore_keys: List[str] = []) ->
                     formatted_paper[key] = ""
                 elif len(paper[key]) > 20:
                     formatted_paper[key] = (
-                        "<details><summary>{0}...</summary><p>{1}</p></details>".format(
-                            paper[key][:5], paper[key]
-                        )
+                        f"<details><summary>{paper[key][:5]}...</summary><p>{paper[key]}</p></details>"
                     )
                 else:
                     formatted_paper[key] = paper[key]
@@ -216,12 +215,6 @@ if __name__ == "__main__":
 
     column_names = ["Title", "Link", "Abstract", "Date", "Comment"]
 
-    f_rm = open("README.md", "w")  # file for README.md
-    f_rm.write("# Daily Papers\n")
-    f_rm.write(
-        f"The project automatically fetches the latest papers from arXiv based on keywords.\n\nThe subheadings in the README file represent the search keywords.\n\nOnly the most recent articles for each keyword are retained, up to a maximum of 100 papers.\n\nYou can click the 'Watch' button to receive daily email notifications.\n\nLast update: {current_date}\n\n"
-    )
-    f_rm.write(f"## {keyword}\n")
     if len(keyword.split()) == 1:
         link = "AND"  # for keyword with only one word, We search for papers containing this keyword in both the title and abstract.
     else:
@@ -231,12 +224,15 @@ if __name__ == "__main__":
     )
     if papers is None:  # failed to get papers
         print("Failed to get papers!")
-        f_rm.close()
         sys.exit("Failed to get papers!")
     rm_table = generate_table(papers)
     is_table = generate_table(papers[:issues_result], ignore_keys=["Abstract"])
-    f_rm.write(rm_table)
-    f_rm.write("\n\n")
+    with open("README.md", "w") as f_rm:
+        f_rm.write("# Daily Papers\n")
+        f_rm.write(
+            f"The project automatically fetches the latest papers from arXiv based on keywords.\n\nThe subheadings in the README file represent the search keywords.\n\nOnly the most recent articles for each keyword are retained, up to a maximum of 100 papers.\n\nYou can click the 'Watch' button to receive daily email notifications.\n\nLast update: {current_date}\n\n"
+        )
+        f_rm.write(f"## {keyword}\n")
+        f_rm.write(rm_table)
+        f_rm.write("\n\n")
     time.sleep(5)  # avoid being blocked by arXiv API
-
-f_rm.close()
