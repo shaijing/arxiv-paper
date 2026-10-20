@@ -1,6 +1,8 @@
 # Daily Papers
 The project automatically fetches the latest papers from arXiv based on keywords.
 
+[Manage search keywords](KEYWORDS.md) through GitHub Issues.
+
 The subheadings in the README file represent the search keywords.
 
 Only the most recent articles for each keyword are retained, up to a maximum of 100 papers.
